@@ -1,0 +1,12 @@
+.DS_Store
+__MACOSX/
+.env
+.env.*
+!.env.example
+wp-config.php
+*.sql
+*.sql.gz
+*.log
+*.zip
+uploads/
+backups/
