@@ -56,6 +56,6 @@ Las pruebas cubren validación, productos excluidos, manipulación del precio, e
 
 ## Origen y licencia
 
-Basado en el archivo `Web_Cotizador-Online_Fuente-Funcional.zip` entregado por Ignacio Montero. La versión actual es 1.1.0; los cambios están en [CHANGELOG.md](CHANGELOG.md).
+Desarrollado por Ignacio Montero. La versión actual es 1.1.0; los cambios están en [CHANGELOG.md](CHANGELOG.md).
 
-La distribución se plantea sin coste. El código de origen no incluía una licencia y este repositorio todavía no concede una licencia de redistribución o modificación. La gratuidad no cambia esa situación. El repositorio sigue siendo privado.
+Uso Gratuito y libre. 
