@@ -16,4 +16,4 @@
 
 ## 1.0
 
-Importación del código original desde el ZIP del usuario, sin modificaciones funcionales. No corresponde a HC Quote Pro.
+Importación del código original, sin modificaciones funcionales.
