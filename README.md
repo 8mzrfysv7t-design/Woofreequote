@@ -1,44 +1,61 @@
 # Woofreequote
 
-Código fuente del plugin **WooCommerce Cotizador Online**, versión declarada **1.0**, importado de `Web_Cotizador-Online_Fuente-Funcional.zip` el 11 de noviembre de 2026.
+Deja que tus clientes pidan una cotización desde tu tienda WooCommerce. Eligen un producto, indican la cantidad y dejan su correo. Tú recibes la solicitud con el importe estimado y puedes responder directamente al cliente.
 
-## Requisitos e instalación
+Woofreequote es gratuito. El plugin no cobra suscripciones ni comisiones, no necesita una cuenta externa y no incluye funciones de pago. Utiliza los productos de tu tienda y el correo configurado en WordPress.
 
-Requiere WordPress, WooCommerce activo y productos configurados. No se han verificado versiones mínimas compatibles.
+## Qué puedes hacer
 
-1. Copiar esta carpeta a `wp-content/plugins/woofreequote/`.
-2. Activar **WooCommerce Cotizador Online** desde Plugins.
-3. Insertar el shortcode `[cotizador_online_form]` en una página.
-4. Comprobar el correo de administración de WordPress y la entrega de correo en un entorno de pruebas.
+- Añadir el formulario a una página con `[cotizador_online_form]`.
+- Recibir solicitudes de productos simples, publicados y visibles en catálogo y búsqueda.
+- Mostrar una estimación calculada en el servidor con el precio del producto y la cantidad solicitada.
+- Recorrer el catálogo en páginas de 20 productos.
+- Responder al cliente desde el correo recibido mediante la cabecera Reply-To.
 
-## Funcionamiento
+El cliente no necesita iniciar sesión. El formulario valida los datos y muestra un error si WordPress no acepta el envío del correo.
 
-El formulario recoge nombre, correo, producto y cantidad. Consulta los productos de WooCommerce y envía la solicitud por AJAX a WordPress. El servidor calcula precio por cantidad y usa `wp_mail()` para notificar al correo de administración configurado en WordPress. El envío efectivo depende de la configuración de correo del sitio.
+## Instalación
 
-No genera PDF ni guarda cotizaciones en una tabla propia. Este código no corresponde al plugin HC Quote Pro 1.5.4 revisado anteriormente.
+Necesitas WordPress y WooCommerce activo. Las pruebas automatizadas cubren la lógica del plugin con dobles de WordPress y WooCommerce; aún falta verificarlo en una instalación real antes de desplegarlo.
 
-## Archivos
+1. Descarga el repositorio y copia su carpeta a `wp-content/plugins/woofreequote/`, o instala un ZIP de esa carpeta desde WordPress.
+2. Activa **Woofreequote**.
+3. Añade `[cotizador_online_form]` a una página.
+4. Revisa el correo de administración en los ajustes de WordPress.
+5. Envía una solicitud de prueba y comprueba su recepción, el importe y la respuesta al cliente.
 
-- `cotizador_hc_.php`: plugin, shortcode y manejador AJAX.
-- `css/style.css`: estilos originales.
-- `js/scripts.js`: script cargado por el plugin.
-- `js/script.js`: copia original conservada; no se carga desde el PHP.
+El shortcode original sigue funcionando. El archivo principal mantiene el nombre `cotizador_hc_.php` para conservar la ruta del plugin. Los estilos solo afectan al formulario y se cargan cuando se muestra el shortcode.
 
-## Estado y pendientes
+## Alcance
 
-Se conserva el código fuente original sin modificaciones funcionales. Se excluyeron metadatos de macOS. No se incluyen base de datos, credenciales, respaldos ni cotizaciones.
+La cantidad admitida es un número entero de 1 a 10000. Los productos deben tener un precio numérico, incluido cero. Se excluyen productos privados, protegidos con contraseña, ocultos y tipos que requieren selección de opciones, como los variables. Los filtros de visibilidad de WooCommerce también se respetan. Si una página del catálogo solo contiene productos excluidos, permite avanzar a la siguiente.
 
-Antes de desplegar o ampliar su uso, revisar:
+El importe es una estimación de precio por cantidad, según el precio almacenado en WooCommerce. No calcula envío, descuentos de carrito ni impuestos específicos del cliente. La tienda debe confirmar el importe final y la disponibilidad. No crea pedidos, archivos PDF ni un historial de cotizaciones.
 
-- Validación de correo, cantidad positiva y productos permitidos.
-- Protección del endpoint público frente a abuso y verificación de solicitudes.
-- Escape de los valores de productos al generar HTML.
-- Comprobación del resultado de `wp_mail()`: actualmente devuelve éxito sin verificar el envío.
-- Respuestas de error explícitas y control de dependencia de WooCommerce.
-- Carga de todos los productos sin paginación y carga global de estilos/scripts.
+`wp_mail()` aceptando el mensaje no garantiza que llegue a la bandeja de entrada. La entrega depende del correo del sitio; un servicio SMTP externo puede tener su propio coste. Ante un timeout, el formulario avisa de que el correo podría haberse procesado para evitar reintentos a ciegas.
 
-La importación verifica integridad de archivos; no constituye una prueba funcional en WordPress ni un despliegue en producción.
+## Protección y privacidad
 
-## Licencia
+Las solicitudes requieren POST y un nonce válido. El formulario incluye un campo trampa y un límite básico de cinco intentos válidos por dirección IP durante diez minutos. Cada intento admitido reinicia esa ventana, incluso si falla el correo. La IP se almacena temporalmente como HMAC con una clave del sitio; no se guarda en texto plano por este plugin.
 
-El archivo fuente no declara una licencia. Este repositorio no añade una licencia ni concede derechos adicionales.
+El límite usa transients de WordPress y no es atómico: solicitudes simultáneas pueden superarlo. Un nonce público no autentica al visitante ni detiene bots por sí solo. En sitios con tráfico abusivo, aplica límites adicionales en el proxy o firewall. El plugin usa `REMOTE_ADDR` e ignora cabeceras reenviadas; detrás de un proxy varios visitantes pueden compartir límite.
+
+Excluye la página del formulario de la caché HTML para evitar servir nonces vencidos. No hace falta excluir los archivos CSS y JavaScript. Los datos de contacto se envían al correo de administración; el plugin no los guarda en una tabla propia. La tienda debe informar de ese tratamiento en su política de privacidad.
+
+## Desarrollo y comprobaciones
+
+```sh
+php -l cotizador_hc_.php
+php tests/regression.php
+php tests/no-woocommerce.php
+node --check js/scripts.js
+node tests/frontend.cjs
+```
+
+Las pruebas cubren validación, productos excluidos, manipulación del precio, escape HTML, paginación, límites de envío y fallo de correo. No envían correos reales. GitHub Actions ejecuta las comprobaciones en PHP 8.2, 8.3 y 8.4. Esa matriz no constituye una declaración de compatibilidad completa con WordPress, WooCommerce o temas concretos.
+
+## Origen y licencia
+
+Basado en el archivo `Web_Cotizador-Online_Fuente-Funcional.zip` entregado por Ignacio Montero. La versión actual es 1.1.0; los cambios están en [CHANGELOG.md](CHANGELOG.md).
+
+La distribución se plantea sin coste. El código de origen no incluía una licencia y este repositorio todavía no concede una licencia de redistribución o modificación. La gratuidad no cambia esa situación. El repositorio sigue siendo privado.

@@ -1,29 +1,29 @@
-jQuery(document).ready(function($) {
-    $('#cotizador-form').on('submit', function(e) {
-        e.preventDefault(); // Evita que el formulario se envíe de forma tradicional y recargue la página
-
-        var formData = {
-            action: 'cotizador_online',
-            name: $('#name').val(),
-            email: $('#email').val(),
-            product: $('#product').val(),
-            quantity: $('#quantity').val(),
-        };
-
+jQuery(function ($) {
+    $('.wfq-form').on('submit', function (event) {
+        event.preventDefault();
+        var form = $(this);
+        if (form.data('sending')) return;
+        var button = form.find('button[type="submit"]');
+        var result = form.find('.wfq-result');
+        form.data('sending', true).attr('aria-busy', 'true');
+        button.prop('disabled', true);
+        result.text('Enviando solicitud…');
         $.ajax({
-            url: cotizadorOnline.ajax_url, // Esta variable debe configurarse en PHP para apuntar al admin-ajax.php
-            type: 'POST',
-            data: formData,
-            success: function(response) {
-                if (response.success) {
-                    $('#cotizacion-result').html('<p>' + response.data.message + '</p><p>Total estimado: ' + response.data.total_price + '</p>');
-                } else {
-                    $('#cotizacion-result').html('<p>Hubo un problema al procesar la solicitud. Inténtalo nuevamente.</p>');
-                }
-            },
-            error: function() {
-                $('#cotizacion-result').html('<p>Error en la solicitud. Inténtalo nuevamente.</p>');
+            url: form.attr('action'), type: 'POST', dataType: 'json',
+            data: form.serialize(), timeout: 30000
+        }).done(function (response) {
+            if (response && response.success && response.data) {
+                result.text(response.data.message + ' Importe estimado: ' + response.data.total_price);
+            } else {
+                result.text(response && response.data && response.data.message || 'No pudimos procesar la solicitud.');
             }
+        }).fail(function (xhr, status) {
+            var response = xhr.responseJSON;
+            result.text(response && response.data && response.data.message ||
+                (status === 'timeout' ? 'La respuesta tardó demasiado. El envío podría haberse procesado; consulta con la tienda antes de repetirlo.' : 'No pudimos confirmar el envío. Comprueba tu conexión antes de volver a intentarlo.'));
+        }).always(function () {
+            form.data('sending', false).removeAttr('aria-busy');
+            button.prop('disabled', false);
         });
     });
 });
